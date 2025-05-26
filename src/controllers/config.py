@@ -1,13 +1,14 @@
 from src.models.task import Task
+from tabulate import tabulate
 import json
 import os
-#
-def create_task(task_name, task_description):
-    # chemin  vers src/Data/data.json
-    data_dir = os.path.join(os.path.dirname(__file__), "../Data")
-    data_file = os.path.join(data_dir,"data.json")
-    os.makedirs(data_dir, exist_ok=True)
 
+# chemin  vers src/Data/data.json
+data_dir = os.path.join(os.path.dirname(__file__), "../Data")
+data_file = os.path.join(data_dir,"data.json")
+os.makedirs(data_dir, exist_ok=True)
+
+def create_task(task_name, task_description):
     # charger ou initialiser la liste des taches
     if not os.path.exists(data_file):
         with open(data_file, "w") as file:
@@ -36,7 +37,28 @@ def create_task(task_name, task_description):
 
     print(f"Tâche '{task_name}' ajoutée avec ID : {new_id}")
 
+# TODO Create a function to liste all information about tasks
+
+def listing_all_tasks():
+    with open(data_file, 'r') as file:
+        tasks = json.load(file)
+
+    if not tasks:
+        print("Aucune tâche enregistrée.")
+        return
+
+    table = []
+    for task in tasks:
+        table.append([task['task_id'], task['task_name'], task['task_description'], task['task_status']])
+
+    print(tabulate(table, headers=["ID", "Nom", "Description","status"], tablefmt="fancy_grid"))
+
+
+
+# TODO Create a function to liste an information about task
+
 #Test
 if __name__== "__main__":
-    create_task("Apprendre python", "Revoir les fonctions et les modules")        
+   # create_task("Apprendre python", "Revoir les fonctions et les modules") 
+   listing_all_tasks()      
 
