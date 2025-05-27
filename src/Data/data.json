@@ -2,13 +2,19 @@
     {
         "task_id": 1,
         "task_name": "Apprendre python",
-        "task_description": "Revoir les fonctions et les modules",
-        "task_status": "Not done"
+        "task_status": "Not done",
+        "is_visible": true
     },
     {
         "task_id": 2,
+        "task_name": "Apprendre Python avanc\u00e9",
+        "task_status": "Not done",
+        "is_visible": true
+    },
+    {
+        "task_id": 3,
         "task_name": "Apprendre python",
-        "task_description": "Revoir les fonctions et les modules",
-        "task_status": "Not done"
+        "task_status": "Not done",
+        "is_visible": true
     }
 ]
