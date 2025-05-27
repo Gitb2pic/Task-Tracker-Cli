@@ -32,7 +32,7 @@ def find_task(task_id):
 
     return None  # Tâche non trouvée
 
-def create_task(task_name, task_description):
+def create_task(task_name):
     # charger ou initialiser la liste des taches
     if not os.path.exists(data_file):
         with open(data_file, "w") as file:
@@ -52,7 +52,7 @@ def create_task(task_name, task_description):
     new_id = max_id + 1
     
     #créer la nouvelle tache avec l'ID  auto
-    task = Task(new_id, task_name, task_description)
+    task = Task(new_id, task_name)
     tasks.append(task.__dict__)
     
     #Enregistrer les tâches mises à jour 
@@ -74,15 +74,40 @@ def listing_all_tasks():
     table = []
     for task in tasks:
         if not task['is_visible'] == False:
-            table.append([task['task_id'], task['task_name'], task['task_description'], task['task_status']])
+            table.append([task['task_id'], task['task_name'],task['task_status']])
 
-    print(tabulate(table, headers=["ID", "Nom", "Description","status"], tablefmt="fancy_grid"))
-
-
-
-# TODO Create a function to update an information about task
+    print(tabulate(table, headers=["ID", "Nom","status"], tablefmt="fancy_grid"))
 
 
+# Create a function to update an information about task
+def update_task(task_id, task_name):
+    task = find_task(task_id)
+    if task is None:
+        print(f"Tâche avec ID {task_id} non trouvée.")
+        return
+    task['task_name'] = task_name
+    
+    with open(data_file, 'r') as file:
+        tasks = json.load(file)
+
+    # Recherche binaire pour trouver l'index de la tâche à mettre à jour
+    low = 0
+    high = len(tasks) - 1
+
+    while low <= high:
+        mid = (low + high) // 2
+        if tasks[mid]['task_id'] == task_id:
+            tasks[mid] = task
+            break
+        elif tasks[mid]['task_id'] < task_id:
+            low = mid + 1
+        else:
+            high = mid - 1
+
+    with open(data_file, 'w') as file:
+        json.dump(tasks, file, indent=4)
+
+    print(f"Tâche avec ID {task_id} mise à jour.")
 
 # TODO Delete a task
 
@@ -91,14 +116,17 @@ def listing_all_tasks():
 # TODO  Marquer une tâche comme en cours
 
 
-#TODO Lister les tâches par statut
+#TODO // Lister les tâches par statut
 
 
 
 #Test
 if __name__== "__main__":
-#    create_task("Apprendre python", "Revoir les fonctions et les modules")
-#    create_task("Apprendre Apprendre", "Mettre en un bonne technique d'apprentissage") 
-   #listing_all_tasks()  
-   print(find_task(2))    
+#    create_task("Apprendre python")
+#    create_task("Apprendre Apprendre")
+#    create_task("Apprendre python") 
+#    listing_all_tasks()  
+    update_task(2, "Apprendre Python avancé")
+    listing_all_tasks()
+    
 
