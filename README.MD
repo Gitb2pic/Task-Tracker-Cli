@@ -1,7 +1,3 @@
-Voici un exemple de fichier `README.md` pour le projet **Task Tracker CLI** de roadmap.sh, adapté en français et conforme aux spécifications du projet.([roadmap.sh][1])
-
----
-
 # 📋 Task Tracker CLI
 
 **Task Tracker CLI** est une application en ligne de commande permettant de gérer vos tâches quotidiennes. Ce projet vous aidera à pratiquer des compétences essentielles telles que la manipulation du système de fichiers, la gestion des entrées utilisateur et la création d'une interface CLI simple.([roadmap.sh][2])
