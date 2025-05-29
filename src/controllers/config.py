@@ -8,6 +8,7 @@ data_dir = os.path.join(os.path.dirname(__file__), "../Data")
 data_file = os.path.join(data_dir,"data.json")
 os.makedirs(data_dir, exist_ok=True)
 
+
 def find_task(task_id):
     with open(data_file, "r") as file:
         tasks = json.load(file)
@@ -110,8 +111,23 @@ def update_task(task_id, task_name):
     print(f"Tâche avec ID {task_id} mise à jour.")
 
 # TODO Delete a task
+def delete_task(task_id): 
 
+    task = find_task(task_id)  # -1 pour ajuster l'ID à l'index de la liste
 
+    if task is None:
+        print(f"Tâche avec ID {task_id} non trouvée.")
+        return
+    task['is_visible'] = False  # Marquer la tâche comme non visible
+    with open(data_file, 'r') as file:
+        tasks = json.load(file)
+    # Recherche binaire pour trouver l'index de la tâche à supprimer
+    tasks[task_id] = task
+
+    with open(data_file, 'w') as file:
+        json.dump(tasks, file, indent=4)
+
+    print(f"Tâche avec ID {task_id} supprimée.")
 
 # TODO  Marquer une tâche comme en cours
 
@@ -122,11 +138,10 @@ def update_task(task_id, task_name):
 
 #Test
 if __name__== "__main__":
-#    create_task("Apprendre python")
-#    create_task("Apprendre Apprendre")
-#    create_task("Apprendre python") 
-#    listing_all_tasks()  
-    update_task(2, "Apprendre Python avancé")
-    listing_all_tasks()
-    
-
+    # create_task("Test Task 1")
+    # create_task("Test Task 2")
+    # listing_all_tasks()
+    #  update_task(1, "Updated Task 1")
+    # listing_all_tasks()
+     delete_task(1)
+    # listing_all_tasks()
