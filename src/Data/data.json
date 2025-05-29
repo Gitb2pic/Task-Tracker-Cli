@@ -1,7 +1,7 @@
 [
     {
         "task_id": 1,
-        "task_name": "Updated Task 1",
+        "task_name": "Faire les courses URGENT",
         "task_status": "Not done",
         "is_visible": true
     },
@@ -10,5 +10,23 @@
         "task_name": "Updated Task 1",
         "task_status": "Not done",
         "is_visible": false
+    },
+    {
+        "task_id": 2,
+        "task_name": "Faire les courses",
+        "task_status": "Not done",
+        "is_visible": false
+    },
+    {
+        "task_id": 3,
+        "task_name": "Apprendre Python",
+        "task_status": "Not done",
+        "is_visible": true
+    },
+    {
+        "task_id": 4,
+        "task_name": "Sport",
+        "task_status": "Not done",
+        "is_visible": true
     }
 ]

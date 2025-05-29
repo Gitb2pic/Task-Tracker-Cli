@@ -3,145 +3,170 @@ from tabulate import tabulate
 import json
 import os
 
-# chemin  vers src/Data/data.json
 data_dir = os.path.join(os.path.dirname(__file__), "../Data")
 data_file = os.path.join(data_dir,"data.json")
 os.makedirs(data_dir, exist_ok=True)
 
+# Fonctions d'aide (privées)
 
-def find_task(task_id):
-    with open(data_file, "r") as file:
-        tasks = json.load(file)
+def _robust_sort_key(task_item):
+    """Clé de tri robuste pour les tâches, gérant les types et absences de task_id."""
+    if isinstance(task_item, dict):
+        val = task_item.get("task_id")
+        # S'assurer que l'ID est un nombre comparable
+        if isinstance(val, (int, float)) and not isinstance(val, bool):
+            return val
+    return float('inf') # Les éléments non-conformes ou sans ID numérique sont placés à la fin
 
-    # Tri des tâches par task_id (au cas où elles ne seraient pas triées)
-    tasks.sort(key=lambda x: x["task_id"])
+def _load_tasks():
+    """Charge les tâches depuis le fichier JSON, les trie et gère les erreurs."""
+    if not os.path.exists(data_file):
+        return []
+    try:
+        with open(data_file, "r", encoding='utf-8') as file:
+            tasks = json.load(file)
+            if not isinstance(tasks, list): # S'assurer que le contenu est une liste
+                print(f"Erreur: Le contenu de {data_file} n'est pas une liste. Une liste vide sera utilisée.")
+                return []
+            tasks.sort(key=_robust_sort_key)
+            return tasks
+    except json.JSONDecodeError:
+        print(f"Erreur: Fichier de données {data_file} corrompu ou malformé. Une liste vide sera utilisée.")
+        # Optionnel: sauvegarder le fichier corrompu
+        # try:
+        #     os.rename(data_file, data_file + f".corrupted_{int(time.time())}")
+        # except OSError as e_rename:
+        #     print(f"Impossible de renommer le fichier corrompu: {e_rename}")
+        return []
+    except Exception as e:
+        print(f"Une erreur inattendue est survenue lors du chargement des tâches: {e}")
+        return []
 
-    # Recherche binaire
+def _save_tasks(tasks):
+    """Sauvegarde la liste des tâches dans le fichier JSON de manière atomique."""
+    tasks.sort(key=_robust_sort_key) # Maintenir l'ordre dans le fichier
+    temp_data_file = data_file + ".tmp"
+    try:
+        with open(temp_data_file, "w", encoding='utf-8') as file:
+            json.dump(tasks, file, indent=4, ensure_ascii=False)
+        os.replace(temp_data_file, data_file)
+    except Exception as e:
+        print(f"Erreur lors de la sauvegarde des tâches: {e}")
+        if os.path.exists(temp_data_file):
+            try:
+                os.remove(temp_data_file)
+            except OSError as e_remove:
+                print(f"Erreur additionnelle lors de la suppression du fichier temporaire: {e_remove}")
+
+def _find_task_by_id_and_get_index(tasks_list, task_id):
+    """Recherche une tâche par ID et retourne la tâche et son index."""
+    # Note: tasks_list est supposée être triée par _load_tasks
     low = 0
-    high = len(tasks) - 1
-
+    high = len(tasks_list) - 1
     while low <= high:
         mid = (low + high) // 2
-        current_id = tasks[mid]["task_id"]
+        current_task = tasks_list[mid]
 
+        if not isinstance(current_task, dict):
+            # Gérer les éléments malformés (devraient être à la fin à cause du tri)
+            high = mid - 1 
+            continue
+
+        current_id = current_task.get("task_id")
+        if not isinstance(current_id, (int, float)) or isinstance(current_id, bool): # ID non numérique ou manquant
+             # Devrait être à la fin à cause du tri avec float('inf')
+            high = mid - 1
+            continue
+            
         if current_id == task_id:
-            return tasks[mid]
+            return current_task, mid
         elif current_id < task_id:
             low = mid + 1
         else:
             high = mid - 1
+    return None, -1
 
-    return None  # Tâche non trouvée
+# Fonctions publiques de l'API
+
+def find_task(task_id):
+    """Trouve une tâche par son ID."""
+    tasks = _load_tasks()
+    task, _ = _find_task_by_id_and_get_index(tasks, task_id)
+    return task
 
 def create_task(task_name):
-    # charger ou initialiser la liste des taches
-    if not os.path.exists(data_file):
-        with open(data_file, "w") as file:
-            json.dump([], file)
+    """Crée une nouvelle tâche."""
+    tasks = _load_tasks()
     
-    with open(data_file, "r") as file:
-        try:
-            tasks = json.load(file)
-        except json.JSONDecodeError:
-            tasks = []
-    #Trouver le prochain ID
+    max_id = 0
     if tasks:
-        max_id =  max((task["task_id"] for task in tasks), default=0)
-    else:
-        max_id = 0
+        valid_ids = [
+            t.get("task_id") for t in tasks 
+            if isinstance(t, dict) and isinstance(t.get("task_id"), (int, float)) and not isinstance(t.get("task_id"), bool)
+        ]
+        if valid_ids:
+            max_id = max(valid_ids, default=0)
 
     new_id = max_id + 1
     
-    #créer la nouvelle tache avec l'ID  auto
-    task = Task(new_id, task_name)
-    tasks.append(task.__dict__)
+    # Assumer que la classe Task gère les valeurs par défaut (status, is_visible)
+    new_task_obj = Task(new_id, task_name)
+    # Il serait préférable d'avoir une méthode new_task_obj.to_dict() dans la classe Task
+    tasks.append(new_task_obj.__dict__) 
     
-    #Enregistrer les tâches mises à jour 
-    with open(data_file, "w") as file:
-        json.dump(tasks, file, indent=4)
-
+    _save_tasks(tasks)
     print(f"Tâche '{task_name}' ajoutée avec ID : {new_id}")
 
-#Create a function to liste all information about tasks
-
 def listing_all_tasks():
-    with open(data_file, 'r') as file:
-        tasks = json.load(file)
+    """Liste toutes les tâches visibles."""
+    tasks = _load_tasks()
 
     if not tasks:
         print("Aucune tâche enregistrée.")
         return
 
-    table = []
+    table_data = []
     for task in tasks:
-        if not task['is_visible'] == False:
-            table.append([task['task_id'], task['task_name'],task['task_status']])
+        if isinstance(task, dict) and task.get('is_visible', True): # Afficher si visible ou si la clé manque (par défaut visible)
+            table_data.append([
+                task.get('task_id', 'N/A'), 
+                task.get('task_name', 'Sans nom'), 
+                task.get('task_status', 'Indéfini') # Assumer que 'task_status' vient de Task
+            ])
 
-    print(tabulate(table, headers=["ID", "Nom","status"], tablefmt="fancy_grid"))
+    if not table_data:
+        print("Aucune tâche visible à afficher.")
+        return
+        
+    print(tabulate(table_data, headers=["ID", "Nom", "Status"], tablefmt="fancy_grid"))
 
+def update_task(task_id, new_task_name):
+    """Met à jour le nom d'une tâche existante."""
+    tasks = _load_tasks()
+    _, index = _find_task_by_id_and_get_index(tasks, task_id)
 
-# Create a function to update an information about task
-def update_task(task_id, task_name):
-    task = find_task(task_id)
-    if task is None:
+    if index == -1:
         print(f"Tâche avec ID {task_id} non trouvée.")
         return
-    task['task_name'] = task_name
+
+    tasks[index]['task_name'] = new_task_name
+    # Optionnel: mettre à jour un champ 'date_modification'
     
-    with open(data_file, 'r') as file:
-        tasks = json.load(file)
-
-    # Recherche binaire pour trouver l'index de la tâche à mettre à jour
-    low = 0
-    high = len(tasks) - 1
-
-    while low <= high:
-        mid = (low + high) // 2
-        if tasks[mid]['task_id'] == task_id:
-            tasks[mid] = task
-            break
-        elif tasks[mid]['task_id'] < task_id:
-            low = mid + 1
-        else:
-            high = mid - 1
-
-    with open(data_file, 'w') as file:
-        json.dump(tasks, file, indent=4)
-
+    _save_tasks(tasks)
     print(f"Tâche avec ID {task_id} mise à jour.")
 
-# TODO Delete a task
 def delete_task(task_id): 
+    """Marque une tâche comme supprimée (invisible)."""
+    tasks = _load_tasks()
+    _, index = _find_task_by_id_and_get_index(tasks, task_id)
 
-    task = find_task(task_id)  # -1 pour ajuster l'ID à l'index de la liste
-
-    if task is None:
+    if index == -1:
         print(f"Tâche avec ID {task_id} non trouvée.")
         return
-    task['is_visible'] = False  # Marquer la tâche comme non visible
-    with open(data_file, 'r') as file:
-        tasks = json.load(file)
-    # Recherche binaire pour trouver l'index de la tâche à supprimer
-    tasks[task_id] = task
 
-    with open(data_file, 'w') as file:
-        json.dump(tasks, file, indent=4)
-
-    print(f"Tâche avec ID {task_id} supprimée.")
-
-# TODO  Marquer une tâche comme en cours
+    tasks[index]['is_visible'] = False
+    
+    _save_tasks(tasks)
+    print(f"Tâche avec ID {task_id} marquée comme supprimée (invisible).")
 
 
-#TODO // Lister les tâches par statut
-
-
-
-#Test
-if __name__== "__main__":
-    # create_task("Test Task 1")
-    # create_task("Test Task 2")
-    # listing_all_tasks()
-    #  update_task(1, "Updated Task 1")
-    # listing_all_tasks()
-     delete_task(1)
-    # listing_all_tasks()
