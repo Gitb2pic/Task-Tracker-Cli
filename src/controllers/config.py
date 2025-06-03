@@ -196,14 +196,4 @@ def change_task_status(task_id, new_status_id):
     _save_tasks(tasks)
     print(f"Statut de la tâche avec ID {task_id} mis à jour vers '{status[new_status_id]}'.")
 
-if __name__ == "__main__":
-    # Exemple d'utilisation
-    # create_task("Apprendre Python")
-    # create_task("Faire les courses")
-    # listing_all_tasks()
-    # update_task(1, "Apprendre Python avancé")
-    change_task_status(1, 1)  # Marquer comme 'In progress'
-    listing_all_tasks()
-    # delete_task(2)  # Supprimer la tâche "Faire les courses"
-    # listing_all_tasks()
     
