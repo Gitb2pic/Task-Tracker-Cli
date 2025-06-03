@@ -6,6 +6,9 @@ import os
 data_dir = os.path.join(os.path.dirname(__file__), "../Data")
 data_file = os.path.join(data_dir,"data.json")
 os.makedirs(data_dir, exist_ok=True)
+# Liste des statuts possibles pour les tâches
+status = ("Not done", "In progress", "Done", "Archived")
+
 
 # Fonctions d'aide (privées)
 
@@ -167,9 +170,40 @@ def delete_task(task_id):
     tasks[index]['is_visible'] = False
     
     _save_tasks(tasks)
-    print(f"Tâche avec ID {task_id} marquée comme supprimée (invisible).")
+    print(f"Tâche avec ID {task_id} marquée comme supprimée.")
 
+# TODO: Ajouter des fonctions pour changer le statut des tâches (par exemple, de 'à faire' à 'terminée').
+def print_task_statuses():
+    """Affiche les statuts disponibles pour les tâches."""
+    print("Statuts disponibles pour les tâches :")
+    for idx, stat in enumerate(status):
+        print(f"{idx}: {stat}")
 
+def change_task_status(task_id, new_status_id):
+    """Change le statut d'une tâche."""
+    tasks = _load_tasks()
+    _, index = _find_task_by_id_and_get_index(tasks, task_id)
+    if index == -1:
+        print(f"Tâche avec ID {task_id} non trouvée.")
+        return
 
+    if new_status_id < 0 or new_status_id >= len(status):
+        print(f"Statut invalide. Veuillez utiliser un ID de statut entre 0 et {len(status) - 1}.")
+        return
 
+    tasks[index]['task_status'] = status[new_status_id]
 
+    _save_tasks(tasks)
+    print(f"Statut de la tâche avec ID {task_id} mis à jour vers '{status[new_status_id]}'.")
+
+if __name__ == "__main__":
+    # Exemple d'utilisation
+    # create_task("Apprendre Python")
+    # create_task("Faire les courses")
+    # listing_all_tasks()
+    # update_task(1, "Apprendre Python avancé")
+    change_task_status(1, 1)  # Marquer comme 'In progress'
+    listing_all_tasks()
+    # delete_task(2)  # Supprimer la tâche "Faire les courses"
+    # listing_all_tasks()
+    
