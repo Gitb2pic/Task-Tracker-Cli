@@ -170,3 +170,6 @@ def delete_task(task_id):
     print(f"Tâche avec ID {task_id} marquée comme supprimée (invisible).")
 
 
+
+
+
