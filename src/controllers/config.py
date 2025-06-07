@@ -1,3 +1,4 @@
+from datetime import time
 from src.models.task import Task
 from tabulate import tabulate
 import json
@@ -36,10 +37,10 @@ def _load_tasks():
     except json.JSONDecodeError:
         print(f"Erreur: Fichier de données {data_file} corrompu ou malformé. Une liste vide sera utilisée.")
         # Optionnel: sauvegarder le fichier corrompu
-        # try:
-        #     os.rename(data_file, data_file + f".corrupted_{int(time.time())}")
-        # except OSError as e_rename:
-        #     print(f"Impossible de renommer le fichier corrompu: {e_rename}")
+        try:
+            os.rename(data_file, data_file + f".corrupted_{int(time.time())}")
+        except OSError as e_rename:
+            print(f"Impossible de renommer le fichier corrompu: {e_rename}")
         return []
     except Exception as e:
         print(f"Une erreur inattendue est survenue lors du chargement des tâches: {e}")
@@ -196,4 +197,22 @@ def change_task_status(task_id, new_status_id):
     _save_tasks(tasks)
     print(f"Statut de la tâche avec ID {task_id} mis à jour vers '{status[new_status_id]}'.")
 
-    
+# TODO: Ajouter une fonction qui permet d'afficher les tâches par statut.
+def print_task_by_status(task_status):
+    """Affiche les tâches par statut."""
+    tasks = _load_tasks()
+    filtered_tasks = [task for task in tasks if isinstance(task, dict) and task.get('task_status') == task_status]
+
+    if not filtered_tasks:
+        print(f"Aucune tâche trouvée avec le statut '{task_status}'.")
+        return
+
+    table_data = []
+    for task in filtered_tasks:
+        table_data.append([
+            task.get('task_id', 'N/A'), 
+            task.get('task_name', 'Sans nom'), 
+            task.get('task_status', 'Indéfini')
+        ])
+
+    print(tabulate(table_data, headers=["ID", "Nom", "Status"], tablefmt="fancy_grid"))
